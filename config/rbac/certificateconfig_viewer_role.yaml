@@ -1,0 +1,27 @@
+# permissions for end users to view certificateconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: certificateconfig-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: certificate-operator
+    app.kubernetes.io/part-of: certificate-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: certificateconfig-viewer-role
+rules:
+- apiGroups:
+  - cert.dana.io
+  resources:
+  - certificateconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cert.dana.io
+  resources:
+  - certificateconfigs/status
+  verbs:
+  - get

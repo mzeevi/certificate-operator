@@ -1,0 +1,16 @@
+apiVersion: cert.dana.io/v1alpha1
+kind: CertificateConfig
+metadata:
+  labels:
+    app.kubernetes.io/name: certificateconfig
+    app.kubernetes.io/instance: certificateconfig-sample
+    app.kubernetes.io/part-of: certificate-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: certificate-operator
+  name: certificateconfig-sample
+spec:
+  secretRef:
+    name: cert-credentials
+    namespace: default
+  daysBeforeRenewal: 7
+  waitTimeout: 5m

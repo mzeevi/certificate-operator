@@ -1,0 +1,29 @@
+apiVersion: cert.dana.io/v1alpha1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/name: certificate
+    app.kubernetes.io/instance: certificate-sample
+    app.kubernetes.io/part-of: certificate-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: certificate-operator
+  name: certificate-sample
+spec:
+  certificateData:
+    subject:
+      commonName: "example"
+      country: "ex"
+      state: "example"
+      locality: "example"
+      organization: "example"
+      organizationUnit: "example"
+    san:
+      dns:
+        - "www.example.com"
+      ips:
+        - "192.168.1.1"
+    template: "default"
+    form: pfx
+  configRef:
+    name: "certificateconfig-sample"
+  secretName: my-secret-new
