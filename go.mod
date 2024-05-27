@@ -3,7 +3,7 @@ module github.com/dana-team/certificate-operator
 go 1.22.2
 
 require (
-	github.com/crossplane/crossplane-runtime v1.15.1
+	github.com/crossplane/crossplane-runtime v1.16.0
 	github.com/go-logr/logr v1.4.2
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/go-cmp v0.6.0
