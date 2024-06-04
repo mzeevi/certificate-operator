@@ -95,6 +95,8 @@ spec:
                   name:
                     description: Name of the CertificateConfig.
                     type: string
+                required:
+                - name
                 type: object
               secretName:
                 description: SecretName is the name of the Kubernetes Secret where

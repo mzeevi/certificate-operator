@@ -17,7 +17,7 @@ const (
 	errCannotCastToRSAPrivateKey = "cannot cast to RSA Private Key"
 
 	certificateBlockType = "CERTIFICATE"
-	rsaBlockType         = "PRIVATE KEY"
+	rsaBlockType         = "RSA PRIVATE KEY"
 )
 
 // TLSData represents TLS data containing a private key and certificate bytes.

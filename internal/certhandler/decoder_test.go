@@ -29,7 +29,7 @@ func Test_Decoder(t *testing.T) {
 			want: want{
 				tlsData: TLSData{
 					CertificateBytes: []uint8(`-----BEGIN CERTIFICATE-----`),
-					PrivateKeyBytes:  []uint8(`-----BEGIN PRIVATE KEY-----`),
+					PrivateKeyBytes:  []uint8(`-----BEGIN RSA PRIVATE KEY-----`),
 				},
 				err: nil,
 			},
