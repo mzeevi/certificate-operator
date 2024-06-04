@@ -41,6 +41,7 @@ func CreateOrUpdateTLSSecret(ctx context.Context, kubeClient client.Client, secr
 			if createErr := kubeClient.Create(ctx, secret); createErr != nil {
 				return fmt.Errorf(errCreatingSecret, secret.Name, secret.Namespace, createErr)
 			}
+			return nil
 		} else {
 			return fmt.Errorf(errGettingSecret, secret.Name, secret.Namespace, err)
 		}

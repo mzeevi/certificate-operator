@@ -51,6 +51,8 @@ type CertificateStatus struct {
 	Guid string `json:"guid,omitempty"`
 	// SignatureHashAlgorithm is the algorithm used to sign the certificate.
 	SignatureHashAlgorithm string `json:"signatureHashAlgorithm,omitempty"`
+	// SecretName is the name of the Kubernetes Secret where the extracted certificate is stored.
+	SecretName string `json:"secretName,omitempty"`
 }
 
 // CertificateData contains data for generating a Certificate.
