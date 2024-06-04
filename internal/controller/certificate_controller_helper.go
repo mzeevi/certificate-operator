@@ -117,6 +117,11 @@ func (r *CertificateReconciler) createOrUpdateTlsSecret(ctx context.Context, cer
 		return errorCondition(ConditionCreateOrUpdateTLSSecretFailed, err), fmt.Errorf(errCreateOrUpdateTlsSecret, err)
 	}
 
+	certificate.Status.SecretName = certificate.Spec.SecretName
+	if err = r.Status().Update(ctx, certificate); err != nil {
+		return errorCondition(ConditionUpdateStatusFailed, err), fmt.Errorf(errUpdateStatus, err)
+	}
+
 	return metav1.Condition{}, nil
 }
 

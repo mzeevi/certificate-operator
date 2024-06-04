@@ -540,6 +540,222 @@ func Test_downloadCert(t *testing.T) {
 	}
 }
 
+func Test_isSecretUpToDate(t *testing.T) {
+	type args struct {
+		localKube   client.Client
+		certificate *v1alpha1.Certificate
+	}
+	type want struct {
+		result bool
+		err    error
+	}
+	cases := map[string]struct {
+		args args
+		want want
+	}{
+		"ShouldReturnSecretIsUpToDate": {
+			args: args{
+				certificate: &v1alpha1.Certificate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "cert",
+						Namespace: "default",
+					},
+					Spec: v1alpha1.CertificateSpec{
+						SecretName: "my-secret",
+					},
+					Status: v1alpha1.CertificateStatus{
+						SecretName: "my-secret",
+					},
+				},
+				localKube: &test.MockClient{
+					MockGet: test.NewMockGetFn(nil),
+				},
+			},
+			want: want{
+				result: true,
+				err:    nil,
+			},
+		},
+		"ShouldFailGettingSecret": {
+			args: args{
+				certificate: &v1alpha1.Certificate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "cert",
+						Namespace: "default",
+					},
+					Spec: v1alpha1.CertificateSpec{
+						SecretName: "my-secret",
+					},
+					Status: v1alpha1.CertificateStatus{
+						SecretName: "my-secret-new",
+					},
+				},
+				localKube: &test.MockClient{
+					MockGet: test.NewMockGetFn(nil),
+				},
+			},
+			want: want{
+				result: false,
+				err:    errBoom,
+			},
+		},
+	}
+	for name, tc := range cases {
+		r := &CertificateReconciler{
+			Client: tc.args.localKube,
+			Scheme: runtime.NewScheme(),
+			Log:    logr.Logger{},
+			CertClientBuilder: func(logr.Logger, *v1alpha1.CertificateConfig, map[string][]byte) (cert.Client, error) {
+				return &MockCertClient{}, nil
+			},
+		}
+
+		t.Run(name, func(t *testing.T) {
+			result, gotErr := r.isSecretUpToDate(context.Background(), tc.args.certificate, tc.args.certificate.Namespace)
+			if diff := cmp.Diff(tc.want.result, result); diff != "" {
+				t.Fatalf("isSecretUpToDate(...): -want result, +got result: %v", diff)
+			}
+
+			if gotErr != nil {
+				if diff := cmp.Diff(tc.want.err.Error(), gotErr.Error()); diff != "" {
+					t.Fatalf("isSecretUpToDate(...): -want error, +got error: %v", diff)
+				}
+			}
+		})
+	}
+}
+
+func Test_isSecretNameChanged(t *testing.T) {
+	type args struct {
+		certificate *v1alpha1.Certificate
+	}
+	type want struct {
+		result bool
+	}
+	cases := map[string]struct {
+		args args
+		want want
+	}{
+		"ShouldReturnSecretIsChanged": {
+			args: args{
+				certificate: &v1alpha1.Certificate{
+					Spec: v1alpha1.CertificateSpec{
+						SecretName: "my-secret",
+					},
+					Status: v1alpha1.CertificateStatus{
+						SecretName: "my-secret-new",
+					},
+				},
+			},
+			want: want{
+				result: true,
+			},
+		},
+		"ShouldReturnSecretIsNotChanged": {
+			args: args{
+				certificate: &v1alpha1.Certificate{
+					Spec: v1alpha1.CertificateSpec{
+						SecretName: "my-secret",
+					},
+					Status: v1alpha1.CertificateStatus{
+						SecretName: "my-secret",
+					},
+				},
+			},
+			want: want{
+				result: false,
+			},
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			result := isSecretNameChanged(tc.args.certificate)
+			if diff := cmp.Diff(tc.want.result, result); diff != "" {
+				t.Fatalf("isSecretNameChanged(...): -want result, +got result: %v", diff)
+			}
+		})
+	}
+}
+
+func Test_isSecretDeleted(t *testing.T) {
+	type args struct {
+		localKube   client.Client
+		certificate *v1alpha1.Certificate
+	}
+	type want struct {
+		result bool
+		err    error
+	}
+	cases := map[string]struct {
+		args args
+		want want
+	}{
+		"ShouldReturnSecretIsUpToDate": {
+			args: args{
+				certificate: &v1alpha1.Certificate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "cert",
+						Namespace: "default",
+					},
+					Status: v1alpha1.CertificateStatus{
+						SecretName: "my-secret",
+					},
+				},
+				localKube: &test.MockClient{
+					MockGet: test.NewMockGetFn(nil),
+				},
+			},
+			want: want{
+				result: false,
+				err:    nil,
+			},
+		},
+		"ShouldFailGettingSecret": {
+			args: args{
+				certificate: &v1alpha1.Certificate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "cert",
+						Namespace: "default",
+					},
+					Status: v1alpha1.CertificateStatus{
+						SecretName: "my-secret-new",
+					},
+				},
+				localKube: &test.MockClient{
+					MockGet: test.NewMockGetFn(errBoom),
+				},
+			},
+			want: want{
+				result: false,
+				err:    errBoom,
+			},
+		},
+	}
+	for name, tc := range cases {
+		r := &CertificateReconciler{
+			Client: tc.args.localKube,
+			Scheme: runtime.NewScheme(),
+			Log:    logr.Logger{},
+			CertClientBuilder: func(logr.Logger, *v1alpha1.CertificateConfig, map[string][]byte) (cert.Client, error) {
+				return &MockCertClient{}, nil
+			},
+		}
+
+		t.Run(name, func(t *testing.T) {
+			result, gotErr := r.isSecretDeleted(context.Background(), tc.args.certificate, tc.args.certificate.Namespace)
+			if diff := cmp.Diff(tc.want.result, result); diff != "" {
+				t.Fatalf("isSecretDeleted(...): -want result, +got result: %v", diff)
+			}
+
+			if gotErr != nil {
+				if diff := cmp.Diff(tc.want.err.Error(), gotErr.Error()); diff != "" {
+					t.Fatalf("isSecretDeleted(...): -want error, +got error: %v", diff)
+				}
+			}
+		})
+	}
+}
+
 func Test_hasNotFoundErrorCondition(t *testing.T) {
 	type args struct {
 		certificate *v1alpha1.Certificate
@@ -629,7 +845,8 @@ func Test_createOrUpdateTlsSecret(t *testing.T) {
 				},
 				certClient: &MockCertClient{},
 				localKube: &test.MockClient{
-					MockUpdate: test.NewMockUpdateFn(nil),
+					MockUpdate:       test.NewMockUpdateFn(nil),
+					MockStatusUpdate: test.NewMockSubResourceUpdateFn(nil),
 					MockGet: func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 						secret, ok := obj.(*corev1.Secret)
 						if !ok {
@@ -654,6 +871,44 @@ func Test_createOrUpdateTlsSecret(t *testing.T) {
 			want: want{
 				condition: metav1.Condition{},
 				err:       nil,
+			},
+		},
+		"ShouldFailUpdatingSecretNameInStatus": {
+			args: args{
+				certificate: &certificate,
+				namespace:   "default",
+				tlsData: certhandler.TLSData{
+					CertificateBytes: []byte(`-----BEGIN CERTIFICATE-----`),
+					PrivateKeyBytes:  []byte(`-----BEGIN PRIVATE KEY-----`),
+				},
+				certClient: &MockCertClient{},
+				localKube: &test.MockClient{
+					MockUpdate:       test.NewMockUpdateFn(nil),
+					MockStatusUpdate: test.NewMockSubResourceUpdateFn(errBoom),
+					MockGet: func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+						secret, ok := obj.(*corev1.Secret)
+						if !ok {
+							return errors.New("object is not a Secret")
+						}
+
+						*secret = corev1.Secret{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      certificate.Spec.SecretName,
+								Namespace: certificate.Namespace,
+							},
+							Type: corev1.SecretTypeTLS,
+							Data: map[string][]byte{
+								corev1.TLSCertKey:       validCertKey,
+								corev1.TLSPrivateKeyKey: validPrivateKey,
+							},
+						}
+						return nil
+					},
+				},
+			},
+			want: want{
+				condition: condition(ConditionUpdateStatusFailed, errBoom),
+				err:       fmt.Errorf(errUpdateStatus, errBoom),
 			},
 		},
 		"ShouldFailSettingOwnerRef": {

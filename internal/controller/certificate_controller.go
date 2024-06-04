@@ -23,6 +23,10 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
 	"github.com/dana-team/certificate-operator/internal/common"
 
 	"github.com/dana-team/certificate-operator/internal/clients/cert"
@@ -79,6 +83,21 @@ type CertificateReconciler struct {
 func (r *CertificateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Certificate{}).
+		Owns(&corev1.Secret{}).
+		WithEventFilter(predicate.Funcs{
+			CreateFunc: func(e event.CreateEvent) bool {
+				return false
+			},
+			UpdateFunc: func(event.UpdateEvent) bool {
+				return false
+			},
+			DeleteFunc: func(e event.DeleteEvent) bool {
+				return true
+			},
+			GenericFunc: func(event.GenericEvent) bool {
+				return false
+			},
+		}).
 		Complete(r)
 }
 
@@ -123,7 +142,11 @@ func (r *CertificateReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{}, err
 		}
 
-		return ctrl.Result{}, nil
+		if upToDate, err := r.isSecretUpToDate(ctx, certificate, req.Namespace); err != nil {
+			return ctrl.Result{}, err
+		} else if upToDate {
+			return ctrl.Result{}, nil
+		}
 	}
 
 	condition, err := r.issueCertificate(ctx, certClient, certificate)
@@ -199,6 +222,41 @@ func (r *CertificateReconciler) removeErrorConditions(ctx context.Context, certi
 func isCertificateValid(certificate *v1alpha1.Certificate, certificateConfig *v1alpha1.CertificateConfig) bool {
 	renewDate := time.Now().AddDate(0, 0, -certificateConfig.Spec.DaysBeforeRenewal)
 	return !certificate.Status.ValidTo.IsZero() && certificate.Status.ValidTo.Time.After(renewDate)
+}
+
+// isSecretUpToDate checks if the secret associated with the certificate is up to date.
+// It returns true if the reconciliation process should stop because the secret is up to date or an error occurred.
+// It returns false if the reconciliation should continue.
+func (r *CertificateReconciler) isSecretUpToDate(ctx context.Context, certificate *v1alpha1.Certificate, namespace string) (stopReconcile bool, err error) {
+	if isSecretNameChanged(certificate) {
+		// If the current secret name doesn't match the desired secret name, continue reconciliation.
+		return false, nil
+	}
+
+	if isSecretDeleted, err := r.isSecretDeleted(ctx, certificate, namespace); err != nil {
+		return true, err
+	} else if isSecretDeleted {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// isSecretNameChanged checks if the secret name was changed.
+func isSecretNameChanged(certificate *v1alpha1.Certificate) bool {
+	return certificate.Status.SecretName != certificate.Spec.SecretName
+}
+
+// isSecretDeleted checks if the secret was deleted.
+func (r *CertificateReconciler) isSecretDeleted(ctx context.Context, certificate *v1alpha1.Certificate, namespace string) (bool, error) {
+	if _, err := common.GetSecret(r.Client, ctx, certificate.Status.SecretName, namespace); err != nil {
+		if errors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	}
+
+	return false, nil
 }
 
 // forceExpirationUpdate updates the validity period of the certificate based on the certificate configuration.
