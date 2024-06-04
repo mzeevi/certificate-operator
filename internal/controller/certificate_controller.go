@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -83,8 +85,7 @@ type CertificateReconciler struct {
 func (r *CertificateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Certificate{}).
-		Owns(&corev1.Secret{}).
-		WithEventFilter(predicate.Funcs{
+		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.Funcs{
 			CreateFunc: func(e event.CreateEvent) bool {
 				return false
 			},
@@ -97,7 +98,7 @@ func (r *CertificateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			GenericFunc: func(event.GenericEvent) bool {
 				return false
 			},
-		}).
+		})).
 		Complete(r)
 }
 
