@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "certificate-operator.fullname" . }}-certificate-viewer-role
+  labels:
+    {{- include "certificate-operator.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+    - cert.dana.io
+  resources:
+    - certificates
+  verbs:
+    - get
+    - list
+    - watch
+- apiGroups:
+    - cert.dana.io
+  resources:
+    - certificates/status
+  verbs:
+    - get

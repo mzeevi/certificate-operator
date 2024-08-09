@@ -1,0 +1,78 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: certificateconfigs.cert.dana.io
+spec:
+  group: cert.dana.io
+  names:
+    kind: CertificateConfig
+    listKind: CertificateConfigList
+    plural: certificateconfigs
+    singular: certificateconfig
+  scope: Cluster
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: CertificateConfig is the Schema for the certificateconfigs API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: CertificateConfigSpec defines the desired state of CertificateConfig.
+              properties:
+                daysBeforeRenewal:
+                  description: DaysBeforeRenewal represents the number of days to renew
+                    the certificate before expiration.
+                  type: integer
+                forceExpirationUpdate:
+                  description: ForceExpirationUpdate indicates whether to force an update
+                    of the Certificate details even when it's valid.
+                  type: boolean
+                secretRef:
+                  description: SecretRef is a reference to the Kubernetes Secret containing
+                    credentials for authenticating with the cert API.
+                  properties:
+                    name:
+                      description: Name is the name of the Secret.
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace where the Secret is located.
+                      type: string
+                  required:
+                    - name
+                    - namespace
+                  type: object
+                waitTimeout:
+                  description: WaitTimeout specifies the maximum time duration for waiting
+                    for response from cert.
+                  type: string
+              required:
+                - daysBeforeRenewal
+                - secretRef
+              type: object
+            status:
+              description: CertificateConfigStatus defines the observed state of CertificateConfig.
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
