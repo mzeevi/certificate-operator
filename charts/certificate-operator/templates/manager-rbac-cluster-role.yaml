@@ -1,0 +1,69 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "certificate-operator.fullname" . }}-manager-role
+  labels:
+    {{- include "certificate-operator.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+  verbs:
+    - create
+    - get
+    - list
+    - update
+    - watch
+- apiGroups:
+    - cert.dana.io
+  resources:
+    - certificateconfigs
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - cert.dana.io
+  resources:
+    - certificateconfigs/finalizers
+  verbs:
+    - update
+- apiGroups:
+    - cert.dana.io
+  resources:
+    - certificateconfigs/status
+  verbs:
+    - get
+    - patch
+    - update
+- apiGroups:
+    - cert.dana.io
+  resources:
+    - certificates
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - cert.dana.io
+  resources:
+    - certificates/finalizers
+  verbs:
+    - update
+- apiGroups:
+    - cert.dana.io
+  resources:
+    - certificates/status
+  verbs:
+    - get
+    - patch
+    - update

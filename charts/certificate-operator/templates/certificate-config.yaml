@@ -1,0 +1,12 @@
+apiVersion: cert.dana.io/v1alpha1
+kind: CertificateConfig
+metadata:
+  name: {{ .Values.certificateConfig.name }}
+  labels:
+    {{- include "certificate-operator.labels" . | nindent 4 }}
+spec:
+  secretRef:
+    name: {{ .Values.certificateConfig.secret.name }}
+    namespace: {{ .Values.certificateConfig.secret.namespace }}
+  daysBeforeRenewal: {{ .Values.certificateConfig.daysBeforeRenewal }}
+  waitTimeout: {{ .Values.certificateConfig.waitTimeout }}
