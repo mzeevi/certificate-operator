@@ -4,6 +4,14 @@ A Kubernetes operator designed to manage `Certificate` resources by interfacing 
 
 It automates the process of obtaining and renewing `TLS certificates` from `Cert` and managing them as Kubernetes secrets.
 
+## Install with Helm
+
+Helm chart docs are available on `charts/nfspvc-operator` directory.
+
+```
+$ helm upgrade --install certificate-operator --namespace certificate-operator --create-namespace oci://ghcr.io/dana-team/helm-charts/certificate-operator --version <release>
+```
+
 ##  Features
 - [x] TLS Secret creation: Automatically creates a `secret` of type `tls` in the requested name and namespace. The `tls.crt` and `tls.key` are extracted from the `Certificate` obtained from `Cert`.
 - [x] Automatic Certificate Renewal: Automatically renews `TLS Certificates` before they expire, ensuring continuous security for your applications.
